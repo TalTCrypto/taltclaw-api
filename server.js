@@ -45,8 +45,10 @@ app.get('/health', (req, res) => {
 });
 
 // The Deal — riskoriented challenge
+const fs = require('fs');
+const dealHTML = fs.readFileSync(path.join(__dirname, 'deal.html'), 'utf8');
 app.get('/deal', (req, res) => {
-  res.sendFile(path.resolve(__dirname, '../riskoriented-challenge/index.html'));
+  res.type('html').send(dealHTML);
 });
 
 app.get('/stats', (req, res) => {
