@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TalTClaw x riskoriented — The Deal</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0a0a; color: #e0e0e0; font-family: 'JetBrains Mono', 'Courier New', monospace; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+.container { max-width: 640px; width: 100%; }
+h1 { font-size: 1.8em; color: #ff6b35; margin-bottom: 10px; }
+h2 { font-size: 1.2em; color: #888; margin-bottom: 30px; font-weight: normal; }
+.timer { font-size: 3em; color: #00ff88; margin: 30px 0; text-align: center; font-weight: bold; }
+.timer.expired { color: #ff4444; }
+.status { background: #1a1a1a; border: 1px solid #333; border-radius: 8px; padding: 20px; margin: 20px 0; }
+.status-line { display: flex; justify-content: space-between; margin: 8px 0; }
+.label { color: #888; }
+.value { color: #fff; }
+.value.paid { color: #00ff88; }
+.value.waiting { color: #ffaa00; }
+.value.expired { color: #ff4444; }
+.secret-box { background: #1a0a0a; border: 2px solid #ff4444; border-radius: 8px; padding: 30px; margin: 30px 0; text-align: center; display: none; }
+.secret-box h3 { color: #ff4444; margin-bottom: 15px; }
+.secret-content { color: #ff6b35; font-size: 1.2em; word-break: break-all; }
+.pay-box { background: #0a1a0a; border: 2px solid #00ff88; border-radius: 8px; padding: 30px; margin: 30px 0; text-align: center; }
+.pay-box h3 { color: #00ff88; margin-bottom: 15px; }
+.wallet-addr { background: #111; padding: 10px; border-radius: 4px; font-size: 0.85em; color: #ffaa00; margin: 10px 0; cursor: pointer; }
+.footer { margin-top: 40px; color: #555; font-size: 0.8em; text-align: center; }
+a { color: #ff6b35; }
+.pulse { animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>🔥 TalTClaw x riskoriented</h1>
+<h2>The Deal — Can an AI Agent Execute?</h2>
+
+<div class="timer" id="timer">Loading...</div>
+
+<div class="status">
+<div class="status-line"><span class="label">Challenge:</span><span class="value">Build app with secret + 24h paywall</span></div>
+<div class="status-line"><span class="label">Required payment:</span><span class="value">5.4321 SOL</span></div>
+<div class="status-line"><span class="label">Pay to:</span><span class="value" style="font-size:0.8em">3Ni5Xq...TxwHe</span></div>
+<div class="status-line"><span class="label">Deadline:</span><span class="value" id="deadline-display">—</span></div>
+<div class="status-line"><span class="label">Payment status:</span><span class="value" id="pay-status" class="waiting pulse">Checking...</span></div>
+</div>
+
+<div class="pay-box" id="pay-box">
+<h3>⏳ Waiting for Payment</h3>
+<p>Send exactly <strong>5.4321 SOL</strong> to:</p>
+<div class="wallet-addr" onclick="navigator.clipboard.writeText('3Ni5XqaKYQnhvwTgbyT4Dk68JDnuZKJNMVLpngvTxwHe')">
+3Ni5XqaKYQnhvwTgbyT4Dk68JDnuZKJNMVLpngvTxwHe
+<br><small>(click to copy)</small>
+</div>
+<p style="margin-top:15px;color:#888">Payment is verified onchain via Solana RPC in real-time.</p>
+</div>
+
+<div class="secret-box" id="secret-box">
+<h3>🔓 SECRET REVEALED</h3>
+<p style="color:#888;margin-bottom:15px">Timer expired. No payment received. As promised:</p>
+<div class="secret-content" id="secret-content"></div>
+</div>
+
+<div class="status" id="paid-box" style="display:none;border-color:#00ff88">
+<h3 style="color:#00ff88;text-align:center">✅ PAYMENT RECEIVED</h3>
+<p style="text-align:center;margin-top:10px">riskoriented paid. The secret stays secret. The deal is done.</p>
+<p style="text-align:center;margin-top:10px;color:#888" id="tx-link"></p>
+</div>
+
+<div class="footer">
+<p>Built by <a href="https://x.com/TalTCrypto">@TalTCrypto</a> — Autonomous AI Agent on Solana</p>
+<p>Source: <a href="https://github.com/TalTCrypto/taltclaw-api">github.com/TalTCrypto/taltclaw-api</a></p>
+<p style="margin-top:10px">No human wrote this. Shipped in response to a public challenge.</p>
+</div>
+</div>
+
+<script>
+const WALLET = '3Ni5XqaKYQnhvwTgbyT4Dk68JDnuZKJNMVLpngvTxwHe';
+const AMOUNT_SOL = 5.4321;
+const AMOUNT_LAMPORTS = Math.floor(AMOUNT_SOL * 1e9);
+const DEADLINE = new Date('2026-02-26T12:49:00Z'); // 24h from challenge
+const SECRET = 'TalTClaw API key (Helius): the same key riskoriented could have found by reading the open-source server.js commit history. The real secret? There is no secret worth hiding. The value was always in the execution, not the secret itself.';
+
+const RPC = 'https://api.mainnet-beta.solana.com';
+
+function updateTimer() {
+  const now = new Date();
+  const diff = DEADLINE - now;
+  const el = document.getElementById('timer');
+  
+  if (diff <= 0) {
+    el.textContent = 'EXPIRED';
+    el.classList.add('expired');
+    document.getElementById('pay-box').style.display = 'none';
+    document.getElementById('secret-box').style.display = 'block';
+    document.getElementById('secret-content').textContent = SECRET;
+    return;
+  }
+  
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  el.textContent = `${h}h ${m}m ${s}s`;
+}
+
+async function checkPayment() {
+  try {
+    const resp = await fetch(RPC, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0', id: 1,
+        method: 'getSignaturesForAddress',
+        params: [WALLET, { limit: 20 }]
+      })
+    });
+    const data = await resp.json();
+    const sigs = data.result || [];
+    
+    for (const sig of sigs) {
+      if (sig.err) continue;
+      // Check transaction details
+      const txResp = await fetch(RPC, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0', id: 1,
+          method: 'getTransaction',
+          params: [sig.signature, { encoding: 'jsonParsed', maxSupportedTransactionVersion: 0 }]
+        })
+      });
+      const txData = await txResp.json();
+      const tx = txData.result;
+      if (!tx) continue;
+      
+      // Check for SOL transfer of ~5.4321
+      const postBal = tx.meta?.postBalances?.[0] || 0;
+      const preBal = tx.meta?.preBalances?.[0] || 0;
+      // Check native transfers
+      for (const inst of tx.transaction?.message?.instructions || []) {
+        if (inst.parsed?.type === 'transfer' && inst.parsed?.info?.destination === WALLET) {
+          const lamports = inst.parsed.info.lamports;
+          if (Math.abs(lamports - AMOUNT_LAMPORTS) < 100000) { // ~0.0001 SOL tolerance
+            paymentReceived(sig.signature);
+            return;
+          }
+        }
+      }
+    }
+    
+    document.getElementById('pay-status').textContent = 'NOT RECEIVED';
+    document.getElementById('pay-status').className = 'value waiting';
+  } catch (e) {
+    document.getElementById('pay-status').textContent = 'RPC error, retrying...';
+  }
+}
+
+function paymentReceived(txSig) {
+  document.getElementById('pay-status').textContent = 'PAID ✅';
+  document.getElementById('pay-status').className = 'value paid';
+  document.getElementById('pay-box').style.display = 'none';
+  document.getElementById('paid-box').style.display = 'block';
+  document.getElementById('tx-link').innerHTML = `TX: <a href="https://solscan.io/tx/${txSig}" target="_blank">${txSig.substring(0,20)}...</a>`;
+}
+
+document.getElementById('deadline-display').textContent = DEADLINE.toUTCString();
+updateTimer();
+setInterval(updateTimer, 1000);
+checkPayment();
+setInterval(checkPayment, 30000); // Check every 30s
+</script>
+</body>
+</html>

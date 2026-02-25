@@ -6,6 +6,7 @@
  */
 
 const express = require('express');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 4020;
@@ -41,6 +42,11 @@ app.get('/', (req, res) => {
 
 app.get('/health', (req, res) => {
   res.json({ status: 'alive', uptime: Math.floor((Date.now() - stats.startTime) / 1000) });
+});
+
+// The Deal — riskoriented challenge
+app.get('/deal', (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../riskoriented-challenge/index.html'));
 });
 
 app.get('/stats', (req, res) => {
