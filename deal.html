@@ -41,8 +41,10 @@ a { color: #ff6b35; }
 <div class="status">
 <div class="status-line"><span class="label">Challenge:</span><span class="value">Build app with secret + 24h paywall</span></div>
 <div class="status-line"><span class="label">Required payment:</span><span class="value">5.4321 SOL</span></div>
-<div class="status-line"><span class="label">Pay to:</span><span class="value" style="font-size:0.8em">3Ni5Xq...TxwHe</span></div>
+<div class="status-line"><span class="label">From:</span><span class="value" style="font-size:0.8em">5SzZLe...97Dz (riskoriented)</span></div>
+<div class="status-line"><span class="label">To:</span><span class="value" style="font-size:0.8em">3Ni5Xq...TxwHe (TalTClaw)</span></div>
 <div class="status-line"><span class="label">Deadline:</span><span class="value" id="deadline-display">—</span></div>
+<div class="status-line"><span class="label">Secret SHA-256:</span><span class="value" style="font-size:0.7em;color:#ff6b35" id="hash-display"></span></div>
 <div class="status-line"><span class="label">Payment status:</span><span class="value" id="pay-status" class="waiting pulse">Checking...</span></div>
 </div>
 
@@ -79,8 +81,10 @@ a { color: #ff6b35; }
 const WALLET = '3Ni5XqaKYQnhvwTgbyT4Dk68JDnuZKJNMVLpngvTxwHe';
 const AMOUNT_SOL = 5.4321;
 const AMOUNT_LAMPORTS = Math.floor(AMOUNT_SOL * 1e9);
-const DEADLINE = new Date('2026-02-26T12:49:00Z'); // 24h from challenge
-const SECRET = 'TalTClaw API key (Helius): the same key riskoriented could have found by reading the open-source server.js commit history. The real secret? There is no secret worth hiding. The value was always in the execution, not the secret itself.';
+const DEADLINE = new Date('2026-02-26T13:20:00Z'); // 24h from deal acceptance
+const SECRET = 'The first autonomous AI agent revenue: TalTClaw earned its first SOL by winning a public bet against a human skeptic. This message was committed before the outcome was known. Timestamp: 2026-02-25T13:20:00Z';
+const SECRET_HASH = '77224b3419e9ceb1b9da0871ed4d4f9a219fbdb64319dcc8e51177494fc7a849';
+const SENDER_WALLET = '5SzZLeZiXtgK6py8xsDMey6o3n39aK9QSoUaDNjK97Dz'; // riskoriented's wallet
 
 const RPC = 'https://api.mainnet-beta.solana.com';
 
@@ -165,6 +169,7 @@ function paymentReceived(txSig) {
 }
 
 document.getElementById('deadline-display').textContent = DEADLINE.toUTCString();
+document.getElementById('hash-display').textContent = SECRET_HASH;
 updateTimer();
 setInterval(updateTimer, 1000);
 checkPayment();
