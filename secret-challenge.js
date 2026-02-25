@@ -154,7 +154,7 @@ app.get('/status', (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Secret Challenge live on port ${PORT}`);
   console.log(`Secret hash: ${CHALLENGE.secretHash}`);
   console.log(`Expires: ${new Date(CHALLENGE.startTime + CHALLENGE.duration).toISOString()}`);
