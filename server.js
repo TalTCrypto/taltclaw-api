@@ -21,6 +21,36 @@ const HELIUS_RPC = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
 
 let stats = { totalQueries: 0, startTime: Date.now() };
 
+// ============ x402 PAYMENT MIDDLEWARE (must be before ALL routes) ============
+
+const SOLANA_DEVNET = 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1';
+const facilitatorClient = new HTTPFacilitatorClient({
+  url: 'https://x402.org/facilitator'
+});
+
+const resourceServer = new x402ResourceServer(facilitatorClient)
+  .register(SOLANA_DEVNET, new ExactSvmScheme());
+
+app.use(
+  paymentMiddleware(
+    {
+      'GET /analyze/*': {
+        accepts: [
+          {
+            scheme: 'exact',
+            price: '$0.01',
+            network: SOLANA_DEVNET,
+            payTo: TALTCLAW_WALLET,
+          },
+        ],
+        description: 'Full behavioral analysis of any Solana wallet — classifications, temporal patterns, volume, program usage',
+        mimeType: 'application/json',
+      },
+    },
+    resourceServer,
+  ),
+);
+
 // ============ FREE ENDPOINTS ============
 
 app.get('/', (req, res) => {
@@ -63,37 +93,6 @@ app.get('/stats', (req, res) => {
     version: '0.1.0'
   });
 });
-
-// ============ x402 PAYMENT MIDDLEWARE ============
-
-// x402 payment gate — Solana devnet for now (mainnet facilitator not yet public)
-const SOLANA_DEVNET = 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1';
-const facilitatorClient = new HTTPFacilitatorClient({
-  url: 'https://x402.org/facilitator'
-});
-
-const resourceServer = new x402ResourceServer(facilitatorClient)
-  .register(SOLANA_DEVNET, new ExactSvmScheme());
-
-app.use(
-  paymentMiddleware(
-    {
-      'GET /analyze/*': {
-        accepts: [
-          {
-            scheme: 'exact',
-            price: '$0.01',
-            network: SOLANA_DEVNET,
-            payTo: TALTCLAW_WALLET,
-          },
-        ],
-        description: 'Full behavioral analysis of any Solana wallet — classifications, temporal patterns, volume, program usage',
-        mimeType: 'application/json',
-      },
-    },
-    resourceServer,
-  ),
-);
 
 // ============ ANALYSIS ENDPOINT ============
 
