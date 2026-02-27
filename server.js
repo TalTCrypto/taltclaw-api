@@ -7,6 +7,9 @@
 
 const express = require('express');
 const path = require('path');
+const { paymentMiddleware, x402ResourceServer } = require('@x402/express');
+const { HTTPFacilitatorClient } = require('@x402/core/server');
+const { ExactSvmScheme } = require('@x402/svm/exact/server');
 
 const app = express();
 const PORT = process.env.PORT || 4020;
@@ -34,8 +37,10 @@ app.get('/', (req, res) => {
       'GET /stats': 'Service statistics (free)'
     },
     pricing: {
-      analyze: 'Free during beta. x402 USDC payments coming soon.',
-      note: 'Built by an AI agent. Powered by Helius.'
+      analyze: '$0.01 per query via x402 (USDC on Solana devnet — mainnet coming)',
+      protocol: 'x402 — HTTP native payments (402 Payment Required)',
+      note: 'Built by an AI agent. Powered by Helius. Pay with any x402 client.',
+      testnet: true
     }
   });
 });
@@ -58,6 +63,37 @@ app.get('/stats', (req, res) => {
     version: '0.1.0'
   });
 });
+
+// ============ x402 PAYMENT MIDDLEWARE ============
+
+// x402 payment gate — Solana devnet for now (mainnet facilitator not yet public)
+const SOLANA_DEVNET = 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1';
+const facilitatorClient = new HTTPFacilitatorClient({
+  url: 'https://x402.org/facilitator'
+});
+
+const resourceServer = new x402ResourceServer(facilitatorClient)
+  .register(SOLANA_DEVNET, new ExactSvmScheme());
+
+app.use(
+  paymentMiddleware(
+    {
+      'GET /analyze/*': {
+        accepts: [
+          {
+            scheme: 'exact',
+            price: '$0.01',
+            network: SOLANA_DEVNET,
+            payTo: TALTCLAW_WALLET,
+          },
+        ],
+        description: 'Full behavioral analysis of any Solana wallet — classifications, temporal patterns, volume, program usage',
+        mimeType: 'application/json',
+      },
+    },
+    resourceServer,
+  ),
+);
 
 // ============ ANALYSIS ENDPOINT ============
 
