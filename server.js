@@ -63,7 +63,8 @@ app.get('/', (req, res) => {
     endpoints: {
       'GET /': 'This page (free)',
       'GET /health': 'Health check (free)',
-      'GET /analyze/:wallet': 'Full behavioral analysis of any Solana wallet',
+      'GET /analyze/:wallet': 'Wallet analysis (x402 payment, Solana devnet)',
+      'GET /paid-analyze/:wallet?payer=YOUR_WALLET': 'Wallet analysis (pay 0.01 SOL mainnet)',
       'GET /stats': 'Service statistics (free)'
     },
     pricing: {
@@ -94,7 +95,64 @@ app.get('/stats', (req, res) => {
   });
 });
 
-// ============ ANALYSIS ENDPOINT ============
+// ============ PAID ANALYSIS (SOL native payment) ============
+
+const { checkPayment, MIN_PAYMENT_SOL, PAYMENT_WINDOW_HOURS } = require('./payment-check');
+
+app.get('/paid-analyze/:wallet', async (req, res) => {
+  const { wallet } = req.params;
+  const payer = req.query.payer;
+  
+  if (!payer) {
+    return res.status(402).json({
+      error: 'Payment required',
+      instructions: {
+        step1: `Send ${MIN_PAYMENT_SOL} SOL to ${TALTCLAW_WALLET}`,
+        step2: `Then call /paid-analyze/${wallet}?payer=YOUR_WALLET`,
+        price: `${MIN_PAYMENT_SOL} SOL per query`,
+        validFor: `${PAYMENT_WINDOW_HOURS}h after payment`,
+        wallet: TALTCLAW_WALLET
+      }
+    });
+  }
+  
+  const payment = await checkPayment(payer, HELIUS_API_KEY);
+  if (!payment.paid) {
+    return res.status(402).json({
+      error: 'No payment found',
+      instructions: {
+        send: `${MIN_PAYMENT_SOL} SOL to ${TALTCLAW_WALLET}`,
+        from: payer,
+        then: `/paid-analyze/${wallet}?payer=${payer}`,
+        note: payment.error || 'No matching transfer found in last 24h'
+      }
+    });
+  }
+  
+  // Payment verified — serve the analysis
+  stats.totalQueries++;
+  stats.paidQueries = (stats.paidQueries || 0) + 1;
+  
+  if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(wallet)) {
+    return res.status(400).json({ error: 'Invalid Solana wallet address' });
+  }
+  
+  try {
+    const analysis = await analyzeWallet(wallet);
+    res.json({
+      agent: 'TalTClaw',
+      wallet,
+      timestamp: new Date().toISOString(),
+      paid: { tx: payment.tx, amount: payment.amount, payer },
+      analysis,
+      _meta: { powered_by: 'Helius Enhanced API', agent_wallet: TALTCLAW_WALLET }
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Analysis failed', detail: err.message });
+  }
+});
+
+// ============ ANALYSIS ENDPOINT (x402 gated) ============
 
 app.get('/analyze/:wallet', async (req, res) => {
   const { wallet } = req.params;
